@@ -51,6 +51,16 @@ class AskRequest(BaseModel):
 # Routes
 # ---------------------------------------------------------------------------
 
+@app.get("/health")
+async def health():
+    try:
+        rag = get_rag()
+        count = rag.retriever.collection.count()
+        return {"status": "ok", "documents": count}
+    except Exception as exc:
+        return {"status": "error", "detail": str(exc)}
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index():
     html_path = Path(__file__).parent / "static" / "index.html"

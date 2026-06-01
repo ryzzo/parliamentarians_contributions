@@ -38,7 +38,7 @@ class HansardRetriever:
             path=db_dir,
             settings=Settings(anonymized_telemetry=False),
         )
-        self.collection = client.get_collection(collection_name)
+        self.collection = client.get_or_create_collection(collection_name)
         self.model = SentenceTransformer(model_name)
 
     def query(

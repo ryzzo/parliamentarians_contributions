@@ -57,6 +57,28 @@ services:
     # Override CMD per task — see Makefile / usage below
     command: ["python", "src/parse.py", "--help"]
 
+  # ── Ingest — one-shot parse + embed (run before starting the UI) ──────────
+  ingest:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: parliament_ingest
+    depends_on:
+      - ollama
+    volumes:
+      - ./data/pdfs:/app/data/pdfs
+      - ./data/chunks:/app/data/chunks
+      - ./data/chroma:/app/data/chroma
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    # Parses all PDFs then embeds them into ChromaDB
+    command: >
+      sh -c "
+        python src/parse.py --input-dir data/pdfs --output-dir data/chunks &&
+        python src/embed.py --chunks-dir data/chunks --db-dir data/chroma
+      "
+    restart: "no"
+
   # ── UI — FastAPI + chat frontend ──────────────────────────────────────────
   ui:
     build:
@@ -68,7 +90,9 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./data/chroma:/app/data/chroma      # shared ChromaDB vector store
+      - ./data/pdfs:/app/data/pdfs
+      - ./data/chunks:/app/data/chunks
+      - ./data/chroma:/app/data/chroma
     environment:
       - OLLAMA_HOST=http://ollama:11434
 
