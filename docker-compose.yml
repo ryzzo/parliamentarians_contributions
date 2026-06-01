@@ -18,10 +18,10 @@ services:
     #           count: all
     #           capabilities: [gpu]
 
-  # ── Model pull — runs once to download llama3.1 ───────────────────────────
+  # ── Model pull — runs once to download gemma2:2b ─────────────────────────
   ollama-pull:
     image: ollama/ollama:latest
-    container_name: parliament_ollama_pull
+    container_name: parliament_gemma2_pull
     depends_on:
       - ollama
     volumes:
@@ -43,7 +43,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: parliament_pipeline
+    container_name: parliament_gemma2_pipeline
     depends_on:
       - ollama
     volumes:
@@ -63,7 +63,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: parliament_ingest
+    container_name: parliament_gemma2_ingest
     depends_on:
       - ollama
     volumes:
@@ -85,7 +85,7 @@ services:
     build:
       context: .
       dockerfile: ui/Dockerfile
-    container_name: parliament_ui
+    container_name: parliament_gemma2_ui
     depends_on:
       - ollama
     ports:
