@@ -26,3 +26,12 @@ docker compose run --rm pipeline python src/parse.py --help
 docker compose run --rm pipeline python src/parse.py --input-dir data/pdfs --output-dir data/chunks
 docker compose run --rm pipeline python src/embed.py --chunks-dir data/chunks --db-dir data/chroma
 docker compose run --rm pipeline python src/rag.py "Who spoke about education funding?"
+
+
+# First-time: make sure the DB is populated (parse + embed PDFs)
+docker compose run --rm pipeline python src/parse.py ...
+docker compose run --rm pipeline python src/embed.py
+
+# Then start everything
+docker compose up ui ollama
+# → open http://localhost:8000
