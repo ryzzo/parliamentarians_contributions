@@ -1,0 +1,61 @@
+services:
+
+  # ── Ollama — local LLM server ──────────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: parliament_ollama
+    volumes:
+      - ollama_models:/root/.ollama       # persists downloaded models
+    ports:
+      - "11434:11434"
+    restart: unless-stopped
+    # GPU support — uncomment if you have an NVIDIA GPU and nvidia-container-toolkit
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # ── Model pull — runs once to download llama3.1 ───────────────────────────
+  ollama-pull:
+    image: ollama/ollama:latest
+    container_name: parliament_ollama_pull
+    depends_on:
+      - ollama
+    volumes:
+      - ollama_models:/root/.ollama
+    entrypoint: >
+      sh -c "
+        echo 'Waiting for Ollama to be ready...';
+        until ollama list > /dev/null 2>&1; do sleep 2; done;
+        echo 'Pulling llama3.1...';
+        ollama pull llama3.1;
+        echo 'Done.';
+      "
+    environment:
+      - OLLAMA_HOST=ollama:11434
+    restart: "no"
+
+  # ── Pipeline — parse / embed / query ──────────────────────────────────────
+  pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: parliament_pipeline
+    depends_on:
+      - ollama
+    volumes:
+      - ./data/pdfs:/app/data/pdfs          # drop PDFs here
+      - ./data/chunks:/app/data/chunks      # parsed .jsonl files land here
+      - ./data/chroma:/app/data/chroma      # ChromaDB persists here
+    environment:
+      - OLLAMA_HOST=http://ollama:11434      # point at the ollama service
+    stdin_open: true
+    tty: true
+    # Override CMD per task — see Makefile / usage below
+    command: ["python", "src/parse.py", "--help"]
+
+volumes:
+  ollama_models:

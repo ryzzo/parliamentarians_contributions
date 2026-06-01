@@ -15,9 +15,15 @@ Usage (as a module):
 
 import argparse
 
+import os
+
 import ollama
 
 from retrieve import HansardRetriever, DEFAULT_DB_DIR, DEFAULT_COLLECTION, DEFAULT_MODEL
+
+# Allow docker-compose to point at the ollama service; fall back to localhost
+_OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+_ollama_client = ollama.Client(host=_OLLAMA_HOST)
 
 # ---------------------------------------------------------------------------
 # Config
@@ -78,7 +84,7 @@ class HansardRAG:
         # 3. Call Llama via Ollama
         if stream:
             print()
-            response = ollama.chat(model=self.llm_model, messages=messages, stream=True)
+            response = _ollama_client.chat(model=self.llm_model, messages=messages, stream=True)
             full_text = []
             for chunk in response:
                 token = chunk["message"]["content"]
@@ -87,7 +93,7 @@ class HansardRAG:
             print()
             return "".join(full_text)
         else:
-            response = ollama.chat(model=self.llm_model, messages=messages)
+            response = _ollama_client.chat(model=self.llm_model, messages=messages)
             return response["message"]["content"]
 
 

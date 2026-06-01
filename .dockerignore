@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.gitignore
+data/chroma/
+data/chunks/
+data/raw/
+data/processed/
+models/
+trial.ipynb
+test.py
+README.md
