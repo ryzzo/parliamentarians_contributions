@@ -52,6 +52,7 @@ services:
       - ./data/chroma:/app/data/chroma      # ChromaDB persists here
     environment:
       - OLLAMA_HOST=http://ollama:11434      # point at the ollama service
+      - LLAMA_MODEL=${LLAMA_MODEL:-llama3.2}
     stdin_open: true
     tty: true
     # Override CMD per task — see Makefile / usage below
@@ -95,6 +96,7 @@ services:
       - ./data/chroma:/app/data/chroma
     environment:
       - OLLAMA_HOST=http://ollama:11434
+      - LLAMA_MODEL=${LLAMA_MODEL:-llama3.2}
 
 volumes:
   ollama_models:
