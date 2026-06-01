@@ -1,4 +1,5 @@
 .DS_Store
 data/
+scraper/
 .env
 trial.ipynb
