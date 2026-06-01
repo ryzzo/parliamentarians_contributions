@@ -57,5 +57,20 @@ services:
     # Override CMD per task — see Makefile / usage below
     command: ["python", "src/parse.py", "--help"]
 
+  # ── UI — FastAPI + chat frontend ──────────────────────────────────────────
+  ui:
+    build:
+      context: .
+      dockerfile: ui/Dockerfile
+    container_name: parliament_ui
+    depends_on:
+      - ollama
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data/chroma:/app/data/chroma      # shared ChromaDB vector store
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+
 volumes:
   ollama_models:
