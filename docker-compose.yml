@@ -30,8 +30,8 @@ services:
       sh -c "
         echo 'Waiting for Ollama to be ready...';
         until ollama list > /dev/null 2>&1; do sleep 2; done;
-        echo 'Pulling llama3.1...';
-        ollama pull llama3.1;
+        echo 'Pulling llama3.2...';
+        ollama pull llama3.2;
         echo 'Done.';
       "
     environment:

@@ -29,7 +29,7 @@ _ollama_client = ollama.Client(host=_OLLAMA_HOST)
 # Config
 # ---------------------------------------------------------------------------
 
-DEFAULT_LLAMA_MODEL = "llama3.1"
+DEFAULT_LLAMA_MODEL = "llama3.2"
 DEFAULT_TOP_K       = 5
 
 SYSTEM_PROMPT = """\
