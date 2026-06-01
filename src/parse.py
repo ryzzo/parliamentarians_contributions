@@ -260,6 +260,57 @@ def save_chunks(chunks: list[dict], path: str = "data/hansard_rag_chunks.jsonl")
     print(f"Saved {len(chunks)} chunks ({full} topic, {speaker} speaker turns) → {path}")
 
 # ---------------------------------------------------------------------------
+# Processing helpers
+# ---------------------------------------------------------------------------
+
+def process_one(pdf_path: "Path", output_dir: "Path", txt_dir: "Path | None") -> int:
+    """Process a single PDF, writing outputs to the given directories.
+    Returns the number of chunks produced."""
+    from pathlib import Path
+
+    stem = pdf_path.stem
+    jsonl_path = output_dir / f"{stem}.jsonl"
+    txt_path   = (txt_dir or output_dir) / f"{stem}.txt"
+
+    print(f"  Reading {pdf_path.name} ...")
+    raw_text = load_pdf(str(pdf_path))
+    save_text(raw_text, str(txt_path))
+    print(f"  Raw text → {txt_path}")
+
+    clean_text = preprocess(raw_text)
+    chunks = parse_hansard(clean_text)
+    save_chunks(chunks, str(jsonl_path))
+    return len(chunks)
+
+
+def process_folder(input_dir: "Path", output_dir: "Path", txt_dir: "Path | None") -> None:
+    from pathlib import Path
+
+    pdfs = sorted(input_dir.glob("*.pdf"))
+    if not pdfs:
+        print(f"No PDF files found in {input_dir}")
+        return
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    if txt_dir:
+        txt_dir.mkdir(parents=True, exist_ok=True)
+
+    total_chunks = 0
+    failed = []
+    for i, pdf_path in enumerate(pdfs, 1):
+        print(f"\n[{i}/{len(pdfs)}] {pdf_path.name}")
+        try:
+            total_chunks += process_one(pdf_path, output_dir, txt_dir)
+        except Exception as exc:
+            print(f"  ERROR: {exc}")
+            failed.append(pdf_path.name)
+
+    print(f"\nDone. {len(pdfs) - len(failed)}/{len(pdfs)} PDFs processed, "
+          f"{total_chunks} total chunks.")
+    if failed:
+        print("Failed:", ", ".join(failed))
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
@@ -267,32 +318,36 @@ if __name__ == "__main__":
     import argparse
     from pathlib import Path
 
-    parser = argparse.ArgumentParser(description="Parse a Kenya Hansard PDF into RAG chunks.")
-    parser.add_argument("pdf", help="Path to the Hansard PDF file")
+    parser = argparse.ArgumentParser(description="Parse Kenya Hansard PDF(s) into RAG chunks.")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--pdf", help="Path to a single Hansard PDF file")
+    group.add_argument("--input-dir", help="Folder containing multiple Hansard PDFs")
+
     parser.add_argument(
-        "-o", "--output",
-        default=None,
-        help="Output .jsonl path (default: same folder as PDF, named hansard_rag_chunks.jsonl)",
+        "-o", "--output-dir",
+        required=True,
+        help="Output folder for .jsonl chunk files (one per PDF)",
     )
     parser.add_argument(
-        "-t", "--txt",
+        "--txt-dir",
         default=None,
-        help="Output .txt path for extracted raw text (default: same folder as PDF, same name as PDF)",
+        help="Folder for raw .txt extracts (default: same as --output-dir)",
     )
     args = parser.parse_args()
 
-    pdf_path = Path(args.pdf)
-    if not pdf_path.exists():
-        raise FileNotFoundError(f"PDF not found: {pdf_path}")
+    output_dir = Path(args.output_dir)
+    txt_dir    = Path(args.txt_dir) if args.txt_dir else None
 
-    output_path = args.output or str(pdf_path.parent / "hansard_rag_chunks.jsonl")
-    txt_path    = args.txt    or str(pdf_path.with_suffix(".txt"))
-
-    print(f"Reading {pdf_path} ...")
-    raw_text = load_pdf(str(pdf_path))
-    save_text(raw_text, txt_path)
-    print(f"Raw text saved → {txt_path}")
-
-    clean_text = preprocess(raw_text)
-    chunks = parse_hansard(clean_text)
-    save_chunks(chunks, output_path)
+    if args.pdf:
+        pdf_path = Path(args.pdf)
+        if not pdf_path.exists():
+            raise FileNotFoundError(f"PDF not found: {pdf_path}")
+        output_dir.mkdir(parents=True, exist_ok=True)
+        if txt_dir:
+            txt_dir.mkdir(parents=True, exist_ok=True)
+        process_one(pdf_path, output_dir, txt_dir)
+    else:
+        input_dir = Path(args.input_dir)
+        if not input_dir.is_dir():
+            raise NotADirectoryError(f"Not a directory: {input_dir}")
+        process_folder(input_dir, output_dir, txt_dir)
