@@ -30,8 +30,8 @@ services:
       sh -c "
         echo 'Waiting for Ollama to be ready...';
         until ollama list > /dev/null 2>&1; do sleep 2; done;
-        echo 'Pulling llama3.2...';
-        ollama pull llama3.2;
+        echo 'Pulling gemma2:2b...';
+        ollama pull gemma2:2b;
         echo 'Done.';
       "
     environment:
@@ -52,7 +52,7 @@ services:
       - ./data/chroma:/app/data/chroma      # ChromaDB persists here
     environment:
       - OLLAMA_HOST=http://ollama:11434      # point at the ollama service
-      - LLAMA_MODEL=${LLAMA_MODEL:-llama3.2}
+      - LLAMA_MODEL=${LLAMA_MODEL:-gemma2:2b}
     stdin_open: true
     tty: true
     # Override CMD per task — see Makefile / usage below
@@ -96,7 +96,7 @@ services:
       - ./data/chroma:/app/data/chroma
     environment:
       - OLLAMA_HOST=http://ollama:11434
-      - LLAMA_MODEL=${LLAMA_MODEL:-llama3.2}
+      - LLAMA_MODEL=${LLAMA_MODEL:-gemma2:2b}
 
 volumes:
   ollama_models:
